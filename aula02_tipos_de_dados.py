@@ -1,0 +1,7 @@
+print(1+10)
+print(1+5069722566)
+print("verdadeiro")
+print("falso")
+print(True)
+print(False)
+print(1.5 + 15.78)
