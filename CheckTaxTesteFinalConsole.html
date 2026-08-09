@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CheckTax - Sistema Unificado (Com Testes)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans transition-colors duration-300 dark:bg-slate-900 dark:text-slate-200">
+    
+    <!-- ========================================== -->
+    <!-- MODAL DE NOTÍCIAS                          -->
+    <!-- ========================================== -->
+    <div id="modal-noticia" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity p-4">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-3xl relative transition-colors max-h-[90vh] overflow-y-auto">
+            <button onclick="fecharNoticia()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-800 dark:hover:text-white text-3xl font-bold transition">&times;</button>
+            <div id="modal-tag" class="text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block">Notícia</div>
+            <h3 id="modal-titulo" class="text-3xl font-bold text-slate-800 dark:text-white mb-2 leading-tight"></h3>
+            <span id="modal-data" class="text-sm text-slate-500 dark:text-slate-400 font-medium block mb-6 border-b border-slate-100 dark:border-slate-700 pb-4"></span>
+            <div id="modal-conteudo" class="text-slate-600 dark:text-slate-300 text-lg leading-relaxed space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- BOTÃO FLUTUANTE DE TEMA (DARK MODE) -->
+    <button id="btn-tema" onclick="alternarTema()" class="fixed bottom-6 left-6 z-[100] bg-slate-800 text-white dark:bg-yellow-400 dark:text-slate-900 p-3 rounded-full shadow-lg transition-transform hover:scale-110 flex items-center justify-center w-12 h-12 text-xl" title="Alternar Tema">
+        🌙
+    </button>
+
+    <!-- TELA DE LOGIN -->
+    <div id="tela-login" class="flex min-h-screen items-center justify-center bg-slate-900">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-lg w-full max-w-md mx-4 transition-colors">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">CheckTax</h1>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">Conformidade Fiscal Inteligente</p>
+            </div>
+            <form onsubmit="fazerLogin(event)">
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail ou Usuário</label>
+                    <input type="text" required placeholder="Digite seu e-mail" class="w-full bg-transparent border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-slate-700 dark:text-white dark:placeholder-slate-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Senha</label>
+                    <input type="password" required placeholder="Digite sua senha" class="w-full bg-transparent border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-slate-700 dark:text-white dark:placeholder-slate-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-sm mb-4">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SISTEMA PRINCIPAL -->
+    <div id="app-principal" class="hidden min-h-screen">
+        
+        <!-- BARRA LATERAL (MENU) -->
+        <aside class="w-72 bg-slate-900 text-white p-6 flex flex-col fixed h-full z-10 border-r border-slate-800">
+            <h1 class="text-3xl font-bold text-blue-400 mb-1">CheckTax</h1>
+            <p class="text-slate-400 text-sm mb-8">Conformidade Fiscal Inteligente</p>
+            <nav class="space-y-2 flex-1 flex flex-col">
+                <a href="#" onclick="mudarTela('dashboard')" id="nav-dashboard" class="nav-item block p-3 bg-blue-600 text-white rounded font-medium transition">Dashboard</a>
+                <a href="#" onclick="mudarTela('analise')" id="nav-analise" class="nav-item block p-3 hover:bg-slate-800 rounded text-slate-300 transition">Nova Análise</a>
+                <a href="#" onclick="mudarTela('historico')" id="nav-historico" class="nav-item block p-3 hover:bg-slate-800 rounded text-slate-300 transition">Histórico</a>
+                <a href="#" onclick="mudarTela('relatorios')" id="nav-relatorios" class="nav-item block p-3 hover:bg-slate-800 rounded text-slate-300 transition">Relatórios</a>
+                <a href="#" onclick="mudarTela('news')" id="nav-news" class="nav-item block p-3 hover:bg-slate-800 rounded text-slate-300 transition">News: Reforma Tributaria</a>
+                <a href="#" onclick="fazerLogout()" class="block p-3 hover:bg-red-500 hover:text-white rounded text-slate-400 transition mt-auto">Sair</a>
+            </nav>
+        </aside>
+
+        <!-- ÁREA PRINCIPAL -->
+        <main class="flex-1 p-8 ml-72 overflow-y-auto">
+            
+            <!-- TELA 1: DASHBOARD -->
+            <div id="tela-dashboard" class="tela-sistema block">
+                <header class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm mb-8 transition-colors">
+                    <h2 class="font-bold text-2xl text-slate-700 dark:text-white">Visão Geral</h2>
+                    <div class="flex gap-4 items-center">
+                        <input type="text" class="bg-transparent border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 w-64 focus:outline-none focus:border-blue-500 dark:text-white dark:placeholder-slate-500" placeholder="Pesquisar notas...">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold">JS</div>
+                    </div>
+                </header>
+
+                <div class="grid grid-cols-5 gap-4 mb-8">
+                    <!-- Cards Omitidos por brevidade visual, mantendo estrutura exata -->
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border-l-4 border-slate-400 dark:border-slate-500 transition-colors">
+                        <p class="text-slate-500 dark:text-slate-400 text-sm">Total de Notas</p>
+                        <p class="text-2xl font-bold dark:text-white">1.254</p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border-l-4 border-green-500 transition-colors">
+                        <p class="text-slate-500 dark:text-slate-400 text-sm">Corretas</p>
+                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">998</p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border-l-4 border-yellow-400 transition-colors">
+                        <p class="text-slate-500 dark:text-slate-400 text-sm">Com Alertas</p>
+                        <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">181</p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border-l-4 border-red-500 transition-colors">
+                        <p class="text-slate-500 dark:text-slate-400 text-sm">Com Erros</p>
+                        <p class="text-2xl font-bold text-red-600 dark:text-red-400">75</p>
+                    </div>
+                    <div class="bg-blue-600 p-5 rounded-xl shadow-sm text-white flex flex-col justify-center items-center">
+                        <p class="text-blue-200 text-sm">Conformidade</p>
+                        <p class="text-3xl font-bold">92%</p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm transition-colors">
+                        <h3 class="font-bold text-lg mb-4 text-slate-700 dark:text-white">Status das Análises</h3>
+                        <div class="h-64 flex justify-center"><canvas id="graficoDonut"></canvas></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm transition-colors">
+                        <h3 class="font-bold text-lg mb-4 text-slate-700 dark:text-white">Volume Mensal</h3>
+                        <div class="h-64"><canvas id="graficoLinha"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TELA 2: NOVA ANÁLISE -->
+            <div id="tela-analise" class="tela-sistema hidden">
+                <header class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm mb-8 transition-colors">
+                    <h2 class="font-bold text-2xl text-slate-700 dark:text-white">Nova Análise</h2>
+                    <div class="flex gap-4 items-center">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold">JS</div>
+                    </div>
+                </header>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-8 max-w-3xl mx-auto mt-4 transition-colors">
+                    <h3 class="font-bold text-xl mb-2 text-slate-700 dark:text-white text-center">Envie suas Notas Fiscais</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mb-8 text-center">Faça o upload de arquivos XML ou PDF para iniciar a validação automática.</p>
+                    
+                    <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-12 text-center hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 transition cursor-pointer mb-8">
+                        <div class="text-5xl mb-4">📁</div>
+                        <p class="font-bold text-lg text-slate-700 dark:text-slate-200">Arraste XML/PDF aqui ou clique para buscar</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Máximo de 10MB por arquivo</p>
+                    </div>
+
+                    <div class="flex justify-end mt-4">
+                        <button onclick="iniciarAnalise()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition shadow-sm">Iniciar Análise</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TELA 3: HISTÓRICO -->
+            <div id="tela-historico" class="tela-sistema hidden">
+                <header class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm mb-8 transition-colors">
+                    <h2 class="font-bold text-2xl text-slate-700 dark:text-white">Histórico de Análises</h2>
+                    <div class="flex gap-4 items-center">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold">JS</div>
+                    </div>
+                </header>
+
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm mb-8 transition-colors">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Buscar Empresa / NF</label>
+                            <input type="text" id="filtro-busca" class="w-full bg-transparent border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 dark:text-white dark:placeholder-slate-500" placeholder="Ex: Alpha ou 12548...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Status</label>
+                            <select id="filtro-status" class="w-full bg-transparent border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 text-slate-700 dark:text-white">
+                                <option value="" class="dark:bg-slate-800">Todos os status</option>
+                                <option value="correta" class="dark:bg-slate-800">Correta</option>
+                                <option value="alerta" class="dark:bg-slate-800">Com Alerta</option>
+                                <option value="erro" class="dark:bg-slate-800">Com Erro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Período</label>
+                            <input type="date" id="filtro-data" class="w-full bg-transparent border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 text-slate-700 dark:text-white">
+                        </div>
+                        <div>
+                            <button onclick="aplicarFiltrosHistorico()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">Aplicar Filtros</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden transition-colors">
+                    <table class="w-full text-left border-collapse" id="tabela-historico">
+                        <thead class="bg-slate-50 dark:bg-slate-700/50 transition-colors">
+                            <tr class="text-slate-500 dark:text-slate-300 border-b border-slate-200 dark:border-slate-600">
+                                <th class="p-4 font-medium">Nº da Nota</th>
+                                <th class="p-4 font-medium">Empresa</th>
+                                <th class="p-4 font-medium">Data de Emissão</th>
+                                <th class="p-4 font-medium">Valor (R$)</th>
+                                <th class="p-4 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="linha-tabela border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                <td class="p-4 font-medium text-slate-700 dark:text-slate-200">NF-12548</td>
+                                <td class="p-4 text-slate-600 dark:text-slate-400">Alpha Tecnologia Ltda</td>
+                                <td class="p-4 text-slate-500 dark:text-slate-400">14/08/2026</td>
+                                <td class="p-4 text-slate-600 dark:text-slate-400">1.250,00</td>
+                                <td class="p-4"><span class="text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/40 px-3 py-1 rounded-full text-sm font-medium">🟢 Correta</span></td>
+                            </tr>
+                            <tr class="linha-tabela border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                <td class="p-4 font-medium text-slate-700 dark:text-slate-200">NF-12549</td>
+                                <td class="p-4 text-slate-600 dark:text-slate-400">Beta Comércio S.A.</td>
+                                <td class="p-4 text-slate-500 dark:text-slate-400">14/08/2026</td>
+                                <td class="p-4 text-slate-600 dark:text-slate-400">8.430,50</td>
+                                <td class="p-4"><span class="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 px-3 py-1 rounded-full text-sm font-medium">🔴 Erro</span></td>
+                            </tr>
+                            <tr class="linha-tabela border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                <td class="p-4 font-medium text-slate-700 dark:text-slate-200">NF-12551</td>
+                                <td class="p-4 text-slate-600 dark:text-slate-400">Delta Logística</td>
+                                <td class="p-4 text-slate-500 dark:text-slate-400">15/08/2026</td>
+                                <td class="p-4 text-slate-600 dark:text-slate-400">3.200,00</td>
+                                <td class="p-4"><span class="text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/40 px-3 py-1 rounded-full text-sm font-medium">🟢 Correta</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TELA 4: RELATÓRIOS -->
+            <div id="tela-relatorios" class="tela-sistema hidden">
+                <header class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm mb-8 transition-colors">
+                    <h2 class="font-bold text-2xl text-slate-700 dark:text-white">Central de Relatórios</h2>
+                    <div class="flex gap-4 items-center">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold">JS</div>
+                    </div>
+                </header>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border-t-4 border-blue-500 flex flex-col transition-colors">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="text-3xl">📊</div>
+                            <h3 class="font-bold text-lg text-slate-700 dark:text-white">Conformidade Mensal</h3>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1">Resumo completo com o total de notas aprovadas, rejeitadas e percentual de acerto do período.</p>
+                        <div class="flex gap-2 mt-auto">
+                            <button onclick="baixarRelatorio()" class="flex-1 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-600 py-2 rounded font-medium hover:bg-blue-100 dark:hover:bg-slate-600 transition text-sm">Baixar PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border-t-4 border-red-500 flex flex-col transition-colors">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="text-3xl">⚠️</div>
+                            <h3 class="font-bold text-lg text-slate-700 dark:text-white">Mapa de Inconsistências</h3>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1">Listagem detalhada de todos os erros encontrados (CFOP inválido, tributos incorretos, etc.) para correção contábil.</p>
+                        <div class="flex gap-2 mt-auto">
+                            <button onclick="baixarRelatorio()" class="flex-1 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-600 py-2 rounded font-medium hover:bg-blue-100 dark:hover:bg-slate-600 transition text-sm">Baixar PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border-t-4 border-yellow-400 flex flex-col transition-colors">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="text-3xl">⚖️</div>
+                            <h3 class="font-bold text-lg text-slate-700 dark:text-white">Projeção IBS/CBS</h3>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1">Estimativa de como as notas atuais seriam tributadas sob as novas regras da Reforma Tributária (IBS e CBS).</p>
+                        <div class="flex gap-2 mt-auto">
+                            <button onclick="baixarRelatorio()" class="flex-1 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-600 py-2 rounded font-medium hover:bg-blue-100 dark:hover:bg-slate-600 transition text-sm">Baixar PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border-t-4 border-purple-500 flex flex-col transition-colors">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="text-3xl">🏢</div>
+                            <h3 class="font-bold text-lg text-slate-700 dark:text-white">Volume por Empresa</h3>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1">Quantidade de NF-e e NFS-e processadas divididas por CNPJ e filiais, ideal para controle de demanda.</p>
+                        <div class="flex gap-2 mt-auto">
+                            <button onclick="baixarRelatorio()" class="flex-1 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-600 py-2 rounded font-medium hover:bg-blue-100 dark:hover:bg-slate-600 transition text-sm">Baixar PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TELA 5: NEWS: REFORMA -->
+            <div id="tela-news" class="tela-sistema hidden">
+                <header class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm mb-8 transition-colors">
+                    <h2 class="font-bold text-2xl text-slate-700 dark:text-white">Atualizações da Reforma Tributária</h2>
+                    <div class="flex gap-4 items-center">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold">JS</div>
+                    </div>
+                </header>
+
+                <div class="space-y-6 max-w-4xl">
+                    <article class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm flex flex-col md:flex-row gap-6 items-start border-l-4 border-blue-600 transition-colors">
+                        <div class="flex-1">
+                            <span class="text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-2 py-1 rounded uppercase tracking-wider mb-2 inline-block">Alerta Oficial</span>
+                            <h3 class="text-xl font-bold text-slate-700 dark:text-white mb-2">Regulamentação do IBS e CBS entra em nova fase de transição</h3>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">A partir deste mês, novas diretrizes do Comitê Gestor exigem adequações na base de cálculo das notas fiscais de serviço.</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Publicado em: 04 de Agosto de 2026</span>
+                                <button onclick="abrirNoticia('Regulamentação do IBS e CBS entra em nova fase de transição', 'A partir deste mês, novas diretrizes do Comitê Gestor exigem adequações na base de cálculo das notas fiscais de serviço. As empresas terão um prazo de 90 dias para ajustar seus sistemas contábeis, sob pena de multas que variam de 1% a 5% do valor da operação. O CheckTax já está sendo atualizado para contemplar essas alíquotas provisórias.', '04 de Agosto de 2026', 'Alerta Oficial')" class="text-blue-600 dark:text-blue-400 text-sm font-bold hover:underline">Ler artigo completo →</button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT DE INTERAÇÃO COM LOGS DE TESTE -->
+    <script>
+        let graficosRenderizados = false;
+
+        function alternarTema() {
+            document.documentElement.classList.toggle('dark');
+            const btn = document.getElementById('btn-tema');
+            btn.innerHTML = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+            
+            // LOG DE TESTE
+            console.log("Teste OK: Tema alterado (Dark/Light mode)");
+        }
+
+        function fazerLogin(event) {
+            event.preventDefault();
+            document.getElementById('tela-login').classList.add('hidden');
+            document.getElementById('tela-login').classList.remove('flex');
+            document.getElementById('app-principal').classList.remove('hidden');
+            document.getElementById('app-principal').classList.add('flex');
+            mudarTela('dashboard');
+
+            if (!graficosRenderizados) {
+                renderizarGraficos();
+                graficosRenderizados = true;
+            }
+            
+            // LOG DE TESTE
+            console.log("Teste OK: Login realizado com sucesso");
+        }
+
+        function fazerLogout() {
+            document.getElementById('app-principal').classList.add('hidden');
+            document.getElementById('app-principal').classList.remove('flex');
+            document.getElementById('tela-login').classList.remove('hidden');
+            document.getElementById('tela-login').classList.add('flex');
+            
+            // LOG DE TESTE
+            console.log("Teste OK: Logout realizado com sucesso");
+        }
+
+        function mudarTela(idTela) {
+            const telas = document.querySelectorAll('.tela-sistema');
+            telas.forEach(tela => {
+                tela.classList.remove('block');
+                tela.classList.add('hidden');
+            });
+            const telaAtiva = document.getElementById('tela-' + idTela);
+            if (telaAtiva) {
+                telaAtiva.classList.remove('hidden');
+                telaAtiva.classList.add('block');
+            }
+            const botoesMenu = document.querySelectorAll('.nav-item');
+            botoesMenu.forEach(botao => {
+                botao.classList.remove('bg-blue-600', 'text-white', 'font-medium');
+                botao.classList.add('hover:bg-slate-800', 'text-slate-300');
+            });
+            const botaoAtivo = document.getElementById('nav-' + idTela);
+            if (botaoAtivo) {
+                botaoAtivo.classList.remove('hover:bg-slate-800', 'text-slate-300');
+                botaoAtivo.classList.add('bg-blue-600', 'text-white', 'font-medium');
+            }
+            
+            // LOG DE TESTE (ignorando o log inicial automático ao logar para não poluir)
+            if(document.getElementById('app-principal').classList.contains('flex')) {
+                console.log("Teste OK: Navegou para a tela -> " + idTela);
+            }
+        }
+
+        // Funções Novas Adicionadas para Teste dos Botões
+        function iniciarAnalise() {
+            console.log("Teste OK: Botão Iniciar Análise clicado");
+        }
+
+        function baixarRelatorio() {
+            console.log("Teste OK: Botão de Baixar PDF clicado");
+        }
+
+        // LÓGICA DE FILTROS HISTÓRICO
+        function aplicarFiltrosHistorico() {
+            const busca = document.getElementById('filtro-busca').value.toLowerCase().trim();
+            const status = document.getElementById('filtro-status').value.toLowerCase();
+            const dataInput = document.getElementById('filtro-data').value;
+            
+            let dataFormatada = "";
+            if(dataInput) {
+                const [ano, mes, dia] = dataInput.split('-');
+                dataFormatada = `${dia}/${mes}/${ano}`;
+            }
+
+            const linhas = document.querySelectorAll('.linha-tabela');
+            linhas.forEach(linha => {
+                const celulaNF = linha.children[0].textContent.toLowerCase();
+                const celulaEmpresa = linha.children[1].textContent.toLowerCase();
+                const celulaData = linha.children[2].textContent;
+                const celulaStatus = linha.children[4].textContent.toLowerCase();
+
+                let mostraBusca = (busca === "") || celulaNF.includes(busca) || celulaEmpresa.includes(busca);
+                let mostraStatus = (status === "") || celulaStatus.includes(status);
+                let mostraData = (dataFormatada === "") || (celulaData === dataFormatada);
+
+                if(mostraBusca && mostraStatus && mostraData) {
+                    linha.style.display = "";
+                } else {
+                    linha.style.display = "none";
+                }
+            });
+            
+            // LOG DE TESTE
+            console.log("Teste OK: Filtros do histórico aplicados");
+        }
+
+        // LÓGICA DO MODAL DE NOTÍCIAS
+        function abrirNoticia(titulo, conteudo, data, tag) {
+            document.getElementById('modal-titulo').innerText = titulo;
+            document.getElementById('modal-conteudo').innerText = conteudo;
+            document.getElementById('modal-data').innerText = 'Publicado em: ' + data;
+            document.getElementById('modal-tag').innerText = tag;
+            const modal = document.getElementById('modal-noticia');
+            modal.classList.remove('hidden');
+            
+            // LOG DE TESTE
+            console.log("Teste OK: Modal de notícia aberto");
+        }
+
+        function fecharNoticia() {
+            const modal = document.getElementById('modal-noticia');
+            modal.classList.add('hidden');
+            
+            // LOG DE TESTE
+            console.log("Teste OK: Modal de notícia fechado");
+        }
+
+        // RENDERIZAÇÃO DOS GRÁFICOS (mantida igual)
+        function renderizarGraficos() {
+            const ctxDonut = document.getElementById('graficoDonut').getContext('2d');
+            new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Corretas', 'Alertas', 'Erros'],
+                    datasets: [{
+                        data: [998, 181, 75],
+                        backgroundColor: ['#22c55e', '#facc15', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569' } } } }
+            });
+            const ctxLinha = document.getElementById('graficoLinha').getContext('2d');
+            new Chart(ctxLinha, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                    datasets: [{
+                        label: 'NF-es Processadas',
+                        data: [350, 420, 380, 510, 490, 620],
+                        backgroundColor: '#2563eb',
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0' }, ticks: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#64748b' } }, x: { grid: { display: false }, ticks: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#64748b' } } } }
+            });
+        }
+    </script>
+</body>
+</html>
